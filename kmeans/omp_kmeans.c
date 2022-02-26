@@ -32,14 +32,19 @@ float euclid_dist_2(int    numdims,  /* no. dimensions */
 {
     int nthreads = omp_get_max_threads();
     float ans=0.0;
+    float localSum;
 
-    #pragma omp parallel num_threads(nthreads) 
+    #pragma omp parallel num_threads(nthreads) private(localSum)
     {  
+        localSum = 0.0;
         for (int i=0; i<numdims; i++) {
             float coord1 = coord1[i];
             float coord2 = coord2[i];
-            ans += (coord1-coord2) * (coord1-coord2);
-        }  
+            localSum += (coord1-coord2) * (coord1-coord2);
+        }
+        
+        #pragma omp critical
+        ans += localSum;  
     }
     return(ans);
 }
