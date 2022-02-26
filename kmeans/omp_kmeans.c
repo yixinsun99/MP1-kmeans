@@ -30,12 +30,17 @@ float euclid_dist_2(int    numdims,  /* no. dimensions */
                     float *coord1,   /* [numdims] */
                     float *coord2)   /* [numdims] */
 {
-    int i;
+    int nthreads = omp_get_max_threads();
     float ans=0.0;
 
-    for (i=0; i<numdims; i++)
-        ans += (coord1[i]-coord2[i]) * (coord1[i]-coord2[i]);
-
+    #pragma omp parallel num_threads(nthreads) 
+    {  
+        for (int i=0; i<numdims; i++) {
+            float coord1 = coord1[i];
+            float coord2 = coord2[i];
+            ans += (coord1-coord2) * (coord1-coord2);
+        }  
+    }
     return(ans);
 }
 
@@ -45,20 +50,25 @@ int find_nearest_cluster(int     numClusters, /* no. clusters */
                          float  *object,      /* [numCoords] */
                          float **clusters)    /* [numClusters][numCoords] */
 {
+    int nthreads = omp_get_max_threads();
     int   index, i;
     float dist, min_dist;
 
-    /* find the cluster id that has min distance to object */
-    index    = 0;
-    min_dist = euclid_dist_2(numCoords, object, clusters[0]);
+    #pragma omp parallel num_threads(nthreads)
+    {
+        /* find the cluster id that has min distance to object */
+        index    = 0;
+        min_dist = euclid_dist_2(numCoords, object, clusters[0]);
 
-    for (i=1; i<numClusters; i++) {
-        dist = euclid_dist_2(numCoords, object, clusters[i]);
-        /* no need square root */
-        if (dist < min_dist) { /* find the min and its array index */
-            min_dist = dist;
-            index    = i;
+        for (i=1; i<numClusters; i++) {
+            dist = euclid_dist_2(numCoords, object, clusters[i]);
+            /* no need square root */
+            if (dist < min_dist) { /* find the min and its array index */
+                min_dist = dist;
+                index    = i;
+            }
         }
+    
     }
     return(index);
 }
