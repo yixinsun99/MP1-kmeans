@@ -56,7 +56,7 @@ int find_nearest_cluster(int     numClusters, /* no. clusters */
                          float  *object,      /* [numCoords] */
                          float **clusters)    /* [numClusters][numCoords] */
 {
-    int nthreads = omp_get_max_threads();
+    // int nthreads = omp_get_max_threads();
     int   index;
     float dist, min_dist;
 
@@ -65,20 +65,29 @@ int find_nearest_cluster(int     numClusters, /* no. clusters */
     index    = 0;
     min_dist = euclid_dist_2(numCoords, object, clusters[0]);
 
-    #pragma omp parallel num_threads(nthreads) private(dist)
-    {
-        int i;
-        int id = omp_get_thread_num();
-        for (i=id+1; i<numClusters; i=i+nthreads) {
-            dist = euclid_dist_2(numCoords, object, clusters[i]);
-            /* no need square root */
-            if (dist < min_dist) { /* find the min and its array index */
-                min_dist = dist;
-                index    = i;
-            }
-        }
+    // #pragma omp parallel num_threads(nthreads) private(dist)
+    // {
+    //     int i;
+    //     int id = omp_get_thread_num();
+    //     for (i=id+1; i<numClusters; i=i+nthreads) {
+    //         dist = euclid_dist_2(numCoords, object, clusters[i]);
+    //         /* no need square root */
+    //         if (dist < min_dist) { /* find the min and its array index */
+    //             min_dist = dist;
+    //             index    = i;
+    //         }
+    //     }
     
+    // }
+    for (i=1; i<numClusters; i++) {
+        dist = euclid_dist_2(numCoords, object, clusters[i]);
+        /* no need square root */
+        if (dist < min_dist) { /* find the min and its array index */
+            min_dist = dist;
+            index    = i;
+        }
     }
+
     return(index);
 }
 
@@ -167,6 +176,7 @@ float** omp_kmeans(int     is_perform_atomic, /* in: */
     }
 
     if (_debug) timing = omp_get_wtime();
+    
     do {
         delta = 0.0;
 
