@@ -27,6 +27,7 @@
 
 /*----< euclid_dist_2() >----------------------------------------------------*/
 /* square of Euclid distance between two multi-dimensional points            */
+//  tell the compiler to include codes below into find_nearest_cluster and store the variables in the static data segment
 __inline static
 float euclid_dist_2(int    numdims,  /* no. dimensions */
                     float *coord1,   /* [numdims] */
@@ -42,6 +43,7 @@ float euclid_dist_2(int    numdims,  /* no. dimensions */
 }
 
 /*----< find_nearest_cluster() >---------------------------------------------*/
+//  tell the compiler to include codes below into omp_kmeans and store the variables in the static data segment
 __inline static
 int find_nearest_cluster(int     numClusters, /* no. clusters */
                          int     numCoords,   /* no. coordinates */
@@ -81,9 +83,8 @@ float** omp_kmeans(int     is_perform_atomic, /* in: */
     int      i, j, k, index, loop=0;
     int     *newClusterSize; /* [numClusters]: no. objects assigned in each
                                 new cluster */
-    int     delta;          /* % of objects change their clusters */
-    int     magnitude = (int)(1.0 / threshold);
-    int     threshold_int = numObjs;
+    float     delta;          /* % of objects change their clusters */
+   
     float  **clusters;       /* out: [numClusters][numCoords] */
     float  **newClusters;    /* [numClusters][numCoords] */
     double   timing;
@@ -91,6 +92,9 @@ float** omp_kmeans(int     is_perform_atomic, /* in: */
     int      nthreads;             /* no. threads */
     int    **local_newClusterSize; /* [nthreads][numClusters] */
     float ***local_newClusters;    /* [nthreads][numClusters][numCoords] */
+
+    // compute the denominator of the division operation in advance and outside the loop
+    float factor = 1.0 / numObjs;
 
     nthreads = omp_get_max_threads();
 
@@ -232,10 +236,9 @@ float** omp_kmeans(int     is_perform_atomic, /* in: */
             }
             newClusterSize[i] = 0;   /* set back to 0 */
         }
-        
-        delta *= magnitude;   
-
-    } while (delta > numObjs && loop++ < 500);
+        // change the division operation(delta /= numObjs) to multiplication operation
+        delta *= factor;
+    } while (delta > threshold && loop++ < 500);
 
     if (_debug) {
         timing = omp_get_wtime() - timing;
